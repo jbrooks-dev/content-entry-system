@@ -1,0 +1,20 @@
+[
+  {
+    "id": "2393e1e1-945d-4e77-b57a-e56cfdecef85",
+    "name": "First Site Test",
+    "devUrl": "https://dev.firstsitetest.app",
+    "productionUrl": "https://firstsitetest.app",
+    "notes": "Testing the first site to a json file.",
+    "createdAt": "2025-06-04T17:54:57.308Z",
+    "updatedAt": "2025-06-04T17:54:57.308Z"
+  },
+  {
+    "id": "8ba1ea67-6d38-411e-bd73-15629a8a411a",
+    "name": "Second Example Site",
+    "devUrl": "https://dev.secondexamplesite.app",
+    "productionUrl": "https://secondexamplesite.app",
+    "notes": "Second site setup for multiple site testing. ",
+    "createdAt": "2025-06-05T13:58:46.750Z",
+    "updatedAt": "2025-06-05T13:58:46.750Z"
+  }
+]
