@@ -23,6 +23,15 @@ interface ExportInfo {
   hasContent: boolean;
 }
 
+// Default stats for when data is loading or unavailable
+const defaultStats: ExportStats = {
+  totalPages: 0,
+  publishedPages: 0,
+  draftPages: 0,
+  pagesWithContent: 0,
+  exportDate: new Date().toISOString(),
+};
+
 export default function WordPressExport() {
   const params = useParams();
   const siteId = params.siteId as string;
@@ -48,7 +57,14 @@ export default function WordPressExport() {
       }
 
       const info = await response.json();
-      setExportInfo(info);
+
+      // Ensure stats object exists with default values
+      const safeInfo: ExportInfo = {
+        ...info,
+        stats: info.stats || defaultStats,
+      };
+
+      setExportInfo(safeInfo);
     } catch (err) {
       setError("Failed to load export information. Please try again.");
       console.error("Error loading export info:", err);
@@ -86,7 +102,8 @@ export default function WordPressExport() {
       const downloadUrl = result.downloadUrl;
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = result.filename;
+      link.download =
+        result.filename || `${exportInfo.site.name}-export.${exportFormat}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -98,12 +115,19 @@ export default function WordPressExport() {
     }
   };
 
+  // Safe access to stats with fallback
+  const stats = exportInfo?.stats || defaultStats;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading export information...</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">
+              Loading export information...
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -111,44 +135,50 @@ export default function WordPressExport() {
 
   if (!exportInfo) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No export information available.</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Export Not Available
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Unable to load export information for this site.
+            </p>
+            <Link
+              href={`/sites/${siteId}`}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              ← Back to Site
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  const canExport = exportInfo.hasSitemap && exportInfo.hasContent;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
               <Link
                 href={`/sites/${siteId}`}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-4"
+                className="text-blue-600 hover:text-blue-700 font-medium mb-2 inline-block"
               >
                 ← Back to Site
               </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  WordPress Export
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Export your content to WordPress WXR format
-                </p>
-              </div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                WordPress Export
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Export your site content to WordPress format
+              </p>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
@@ -212,25 +242,25 @@ export default function WordPressExport() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {exportInfo.stats.totalPages}
+                  {stats.totalPages}
                 </div>
                 <div className="text-sm text-gray-500">Total Pages</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {exportInfo.stats.publishedPages}
+                  {stats.publishedPages}
                 </div>
                 <div className="text-sm text-gray-500">Published</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {exportInfo.stats.draftPages}
+                  {stats.draftPages}
                 </div>
                 <div className="text-sm text-gray-500">Drafts</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {exportInfo.stats.pagesWithContent}
+                  {stats.pagesWithContent}
                 </div>
                 <div className="text-sm text-gray-500">With Content</div>
               </div>
@@ -261,253 +291,134 @@ export default function WordPressExport() {
                 </span>
               </div>
             </div>
-
-            {!canExport && (
-              <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                <div className="flex">
-                  <svg
-                    className="w-5 h-5 text-yellow-400 mr-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                    />
-                  </svg>
-                  <div>
-                    <h3 className="text-yellow-800 font-medium">
-                      Export Not Available
-                    </h3>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      {!exportInfo.hasSitemap &&
-                        "You need to create a sitemap first. "}
-                      {!exportInfo.hasContent &&
-                        "You need to create some content pages first."}
-                    </p>
-                    <div className="mt-3 space-x-3">
-                      {!exportInfo.hasSitemap && (
-                        <Link
-                          href={`/sites/${siteId}/sitemap`}
-                          className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
-                        >
-                          Create Sitemap →
-                        </Link>
-                      )}
-                      {!exportInfo.hasContent && (
-                        <Link
-                          href={`/sites/${siteId}/content`}
-                          className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
-                        >
-                          Create Content →
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Export Options */}
-        {canExport && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Export Options
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Choose your export format and settings
-              </p>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Export Format
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setExportFormat("wxr")}
-                      className={`p-4 text-left border rounded-lg transition-colors ${
-                        exportFormat === "wxr"
-                          ? "bg-blue-50 border-blue-300 text-blue-700"
-                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="font-medium">
-                        WordPress WXR (Recommended)
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        Standard WordPress export format (.xml)
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setExportFormat("json")}
-                      className={`p-4 text-left border rounded-lg transition-colors ${
-                        exportFormat === "json"
-                          ? "bg-purple-50 border-purple-300 text-purple-700"
-                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="font-medium">JSON Format</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        Structured data format (.json)
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Export Options
+            </h2>
           </div>
-        )}
 
-        {/* Export Actions */}
-        {canExport && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Generate Export
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Create and download your WordPress export file
-              </p>
-            </div>
-
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">
-                    Ready to Export
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Export format:{" "}
-                    <span className="font-medium">
-                      {exportFormat.toUpperCase()}
-                    </span>
-                  </p>
-                </div>
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-md font-medium transition-colors flex items-center gap-2"
-                >
-                  {exporting && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  )}
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          <div className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Export Format
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="format"
+                      value="wxr"
+                      checked={exportFormat === "wxr"}
+                      onChange={(e) => setExportFormat(e.target.value as "wxr")}
+                      className="form-radio text-blue-600"
                     />
-                  </svg>
-                  {exporting ? "Generating..." : "Download Export"}
-                </button>
-              </div>
-
-              {/* Help Text */}
-              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
-                <h4 className="text-blue-800 font-medium mb-2">
-                  How to Import
-                </h4>
-                <ol className="text-blue-700 text-sm space-y-1 list-decimal list-inside">
-                  <li>Download the export file using the button above</li>
-                  <li>In your WordPress admin, go to Tools → Import</li>
-                  <li>
-                    Choose &quot;WordPress&quot; and install the importer if
-                    needed
-                  </li>
-                  <li>Upload your export file and follow the import wizard</li>
-                  <li>Map authors and choose import options as needed</li>
-                </ol>
+                    <span className="ml-2">
+                      <span className="font-medium">WordPress XML (WXR)</span>
+                      <span className="text-gray-500 text-sm block">
+                        Standard WordPress export format for importing into
+                        WordPress sites
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="format"
+                      value="json"
+                      checked={exportFormat === "json"}
+                      onChange={(e) =>
+                        setExportFormat(e.target.value as "json")
+                      }
+                      className="form-radio text-blue-600"
+                    />
+                    <span className="ml-2">
+                      <span className="font-medium">JSON</span>
+                      <span className="text-gray-500 text-sm block">
+                        Raw data export for custom processing or backup
+                      </span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="mt-8 bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link
-              href={`/sites/${siteId}/sitemap`}
-              className="flex items-center justify-center bg-white border border-gray-300 rounded-md px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"
-                />
-              </svg>
-              Manage Sitemap
-            </Link>
-
-            <Link
-              href={`/sites/${siteId}/content`}
-              className="flex items-center justify-center bg-white border border-gray-300 rounded-md px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-              Edit Content
-            </Link>
-
-            <button
-              onClick={loadExportInfo}
-              className="flex items-center justify-center bg-white border border-gray-300 rounded-md px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Refresh Stats
-            </button>
           </div>
         </div>
-      </main>
+
+        {/* Export Actions */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Ready to Export
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Download your site content in {exportFormat.toUpperCase()}{" "}
+                  format
+                </p>
+              </div>
+
+              <button
+                onClick={handleExport}
+                disabled={
+                  exporting ||
+                  (!exportInfo.hasSitemap && !exportInfo.hasContent)
+                }
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  exporting ||
+                  (!exportInfo.hasSitemap && !exportInfo.hasContent)
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {exporting ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        className="opacity-25"
+                      ></circle>
+                      <path
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        className="opacity-75"
+                      ></path>
+                    </svg>
+                    Generating Export...
+                  </span>
+                ) : (
+                  `Export ${exportFormat.toUpperCase()}`
+                )}
+              </button>
+            </div>
+
+            {/* Warning for empty export */}
+            {!exportInfo.hasSitemap && !exportInfo.hasContent && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> This site has no sitemap or content
+                  pages. The export will be empty. Consider adding some content
+                  before exporting.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

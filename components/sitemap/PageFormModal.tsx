@@ -167,8 +167,8 @@ export const PageFormModal: React.FC<PageFormModalProps> = ({
                 </select>
                 {contentPages.length === 0 && (
                   <p className="text-sm text-gray-500 mt-1">
-                    No content pages available. Switch to &quot;New Content&quot; to
-                    create one.
+                    No content pages available. Switch to &quot;New
+                    Content&quot; to create one.
                   </p>
                 )}
               </div>
@@ -194,7 +194,9 @@ export const PageFormModal: React.FC<PageFormModalProps> = ({
                   }
                 }}
                 required
-                disabled={mode === "existing" && (formData.contentPageId!==undefined)}
+                disabled={
+                  mode === "existing" && formData.contentPageId !== undefined
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 placeholder="Enter page title"
               />
@@ -215,7 +217,9 @@ export const PageFormModal: React.FC<PageFormModalProps> = ({
                 value={formData.url}
                 onChange={handleChange}
                 required
-                disabled={mode === "existing"  && (formData.contentPageId!==undefined)}
+                disabled={
+                  mode === "existing" && formData.contentPageId !== undefined
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 placeholder="/page-url"
               />
@@ -270,4 +274,4 @@ export const PageFormModal: React.FC<PageFormModalProps> = ({
       </div>
     </div>
   );
-}
+};

@@ -1,39 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { Site } from '@/types/site';
+import { SitesDbService } from '@/lib/sites-db';
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'sites.json');
-
-// Read sites from JSON file
-async function readSites(): Promise<Site[]> {
-  try {
-    const data = await fs.readFile(DATA_FILE, 'utf8');
-    const sites = JSON.parse(data);
-    return sites.map((site: any) => ({
-      ...site,
-      createdAt: new Date(site.createdAt),
-      updatedAt: new Date(site.updatedAt)
-    }));
-  } catch (error) {
-    return [];
-  }
-}
-
-// Write sites to JSON file
-async function writeSites(sites: Site[]): Promise<void> {
-  await fs.writeFile(DATA_FILE, JSON.stringify(sites, null, 2));
-}
-
-// GET /api/sites/[id] - Get a specific site
+// GET /api/sites/[siteId] - Get site by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ siteId: string }> }
 ) {
   try {
-    const { id } = await params;
-    const sites = await readSites();
-    const site = sites.find(s => s.id === id);
+    const { siteId } = await params;
+    const site = await SitesDbService.getSiteById(siteId);
     
     if (!site) {
       return NextResponse.json(
@@ -41,24 +16,24 @@ export async function GET(
         { status: 404 }
       );
     }
-
+    
     return NextResponse.json(site);
   } catch (error) {
-    console.error('Error reading site:', error);
+    console.error('Error fetching site:', error);
     return NextResponse.json(
-      { error: 'Failed to read site' },
+      { error: 'Failed to fetch site' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/sites/[id] - Update a specific site
+// PUT /api/sites/[siteId] - Update site
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ siteId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { siteId } = await params;
     const body = await request.json();
     const { name, devUrl, productionUrl, notes } = body;
 
@@ -69,30 +44,24 @@ export async function PUT(
       );
     }
 
-    const sites = await readSites();
-    const siteIndex = sites.findIndex(s => s.id === id);
-    
-    if (siteIndex === -1) {
+    const siteData = {
+      name: name.trim(),
+      devUrl: devUrl?.trim() || '',
+      productionUrl: productionUrl?.trim() || '',
+      notes: notes?.trim() || ''
+    };
+
+    const updatedSite = await SitesDbService.updateSite(siteId, siteData);
+    return NextResponse.json(updatedSite);
+  } catch (error) {
+    console.error('Error updating site:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage === 'Site not found') {
       return NextResponse.json(
         { error: 'Site not found' },
         { status: 404 }
       );
     }
-
-    // Update the site
-    sites[siteIndex] = {
-      ...sites[siteIndex],
-      name: name.trim(),
-      devUrl: devUrl || '',
-      productionUrl: productionUrl || '',
-      notes: notes || '',
-      updatedAt: new Date()
-    };
-
-    await writeSites(sites);
-    return NextResponse.json(sites[siteIndex]);
-  } catch (error) {
-    console.error('Error updating site:', error);
     return NextResponse.json(
       { error: 'Failed to update site' },
       { status: 500 }
@@ -100,30 +69,24 @@ export async function PUT(
   }
 }
 
-// DELETE /api/sites/[id] - Delete a specific site
+// DELETE /api/sites/[siteId] - Delete site
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ siteId: string }> }
 ) {
   try {
-    const { id } = await params;
-    const sites = await readSites();
-    const siteIndex = sites.findIndex(s => s.id === id);
-    
-    if (siteIndex === -1) {
+    const { siteId } = await params;
+    await SitesDbService.deleteSite(siteId);
+    return NextResponse.json({ message: 'Site deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting site:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage === 'Site not found') {
       return NextResponse.json(
         { error: 'Site not found' },
         { status: 404 }
       );
     }
-
-    // Remove the site
-    const deletedSite = sites.splice(siteIndex, 1)[0];
-    await writeSites(sites);
-    
-    return NextResponse.json({ message: 'Site deleted successfully', site: deletedSite });
-  } catch (error) {
-    console.error('Error deleting site:', error);
     return NextResponse.json(
       { error: 'Failed to delete site' },
       { status: 500 }

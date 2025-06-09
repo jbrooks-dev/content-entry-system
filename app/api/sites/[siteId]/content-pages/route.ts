@@ -1,41 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { ContentPage } from '@/types/sitemap';
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const CONTENT_PAGES_FILE = path.join(DATA_DIR, 'content-pages.json');
-
-// Ensure data directory exists
-async function ensureDataDir() {
-  try {
-    await fs.access(DATA_DIR);
-  } catch {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  }
-}
-
-// Read content pages from JSON file
-async function readContentPages(): Promise<ContentPage[]> {
-  try {
-    await ensureDataDir();
-    const data = await fs.readFile(CONTENT_PAGES_FILE, 'utf8');
-    const pages = JSON.parse(data);
-    return pages.map((page: any) => ({
-      ...page,
-      createdAt: new Date(page.createdAt),
-      updatedAt: new Date(page.updatedAt)
-    }));
-  } catch (error) {
-    return [];
-  }
-}
-
-// Write content pages to JSON file
-async function writeContentPages(pages: ContentPage[]): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(CONTENT_PAGES_FILE, JSON.stringify(pages, null, 2));
-}
+import { ContentPagesDbService } from '@/lib/content-pages-db';
 
 // GET /api/sites/[siteId]/content-pages - Get content pages for a site
 export async function GET(
@@ -44,9 +8,17 @@ export async function GET(
 ) {
   try {
     const { siteId } = await params;
-    const allPages = await readContentPages();
-    const sitePages = allPages.filter(page => page.siteId === siteId);
-    return NextResponse.json(sitePages);
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get('status') as 'draft' | 'published' | null;
+    
+    let pages;
+    if (status) {
+      pages = await ContentPagesDbService.getContentPagesByStatus(siteId, status);
+    } else {
+      pages = await ContentPagesDbService.getContentPages(siteId);
+    }
+    
+    return NextResponse.json(pages);
   } catch (error) {
     console.error('Error reading content pages:', error);
     return NextResponse.json(
@@ -73,41 +45,29 @@ export async function POST(
       );
     }
 
-    const allPages = await readContentPages();
-    
-    // Check for duplicate URL within the same site
-    const existingPage = allPages.find(page => 
-      page.siteId === siteId && page.url === url.trim()
-    );
-    
-    if (existingPage) {
-      return NextResponse.json(
-        { error: 'A page with this URL already exists' },
-        { status: 400 }
-      );
-    }
+    // Ensure URL starts with /
+    const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
 
-    const now = new Date();
-    
-    const newPage: ContentPage = {
-      id: crypto.randomUUID(),
-      siteId: siteId,
+    const pageData = {
       title: title.trim(),
-      url: url.trim(),
-      metaDescription: metaDescription?.trim() || '',
-      content: content || '',
-      contentHtml: contentHtml || '',
-      status: status || 'draft',
-      createdAt: now,
-      updatedAt: now
+      url: normalizedUrl,
+      metaDescription: metaDescription?.trim(),
+      content,
+      contentHtml,
+      status: status || 'draft'
     };
 
-    allPages.push(newPage);
-    await writeContentPages(allPages);
-
+    const newPage = await ContentPagesDbService.createContentPage(siteId, pageData);
     return NextResponse.json(newPage, { status: 201 });
   } catch (error) {
     console.error('Error creating content page:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('already exists')) {
+      return NextResponse.json(
+        { error: 'A page with this URL already exists for this site' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to create content page' },
       { status: 500 }
