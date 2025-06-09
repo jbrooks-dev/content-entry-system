@@ -116,7 +116,7 @@ export default function Dashboard() {
                 Content Entry System
               </h1>
               <p className="text-sm text-gray-600">
-                Manage your WordPress sites and content
+                Manage WordPress sites and content
               </p>
             </div>
             <button

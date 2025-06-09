@@ -35,7 +35,7 @@ export async function PUT(
   try {
     const { siteId } = await params;
     const body = await request.json();
-    const { name, devUrl, productionUrl, notes } = body;
+    const { name, devUrl, productionUrl, notes, client, host, customHost, template, headerScripts, bodyScripts, footerScripts } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -48,7 +48,15 @@ export async function PUT(
       name: name.trim(),
       devUrl: devUrl?.trim() || '',
       productionUrl: productionUrl?.trim() || '',
-      notes: notes?.trim() || ''
+      notes: notes?.trim() || '',
+      client: client?.trim() || '',
+      host: host?.trim() || '',
+      customHost: customHost?.trim() || '',
+      template: template?.trim() || '',
+      headerScripts: headerScripts?.trim() || '',
+      bodyScripts: bodyScripts?.trim() || '',
+      footerScripts: footerScripts?.trim() || '',
+
     };
 
     const updatedSite = await SitesDbService.updateSite(siteId, siteData);

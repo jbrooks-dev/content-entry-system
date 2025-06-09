@@ -13,7 +13,14 @@ export class SitesDbService {
           production_url as "productionUrl", 
           notes, 
           created_at as "createdAt", 
-          updated_at as "updatedAt"
+          updated_at as "updatedAt",
+          client,
+          host,
+          custom_host as "customHost",
+          template,
+          header_scripts as "headerScripts",
+          body_scripts as "bodyScripts",
+          footer_scripts as "footerScripts"
         FROM sites 
         ORDER BY created_at DESC
       `;
@@ -25,7 +32,14 @@ export class SitesDbService {
         productionUrl: row.productionUrl,
         notes: row.notes,
         createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt)
+        updatedAt: new Date(row.updatedAt),
+        client: row.client,
+        host: row.host,
+        customHost: row.customHost,
+        template: row.template,
+        headerScripts: row.headerScripts,
+        bodyScripts: row.bodyScripts,
+        footerScripts: row.footerScripts 
       }));
     } catch (error) {
       console.error('Error fetching sites:', error);
@@ -44,7 +58,14 @@ export class SitesDbService {
           production_url as "productionUrl", 
           notes, 
           created_at as "createdAt", 
-          updated_at as "updatedAt"
+          updated_at as "updatedAt",
+          client,
+          host,
+          custom_host as "customHost",
+          template,
+          header_scripts as "headerScripts",
+          body_scripts as "bodyScripts",
+          footer_scripts as "footerScripts"
         FROM sites 
         WHERE id = ${id}
       `;
@@ -61,7 +82,14 @@ export class SitesDbService {
         productionUrl: row.productionUrl,
         notes: row.notes,
         createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt)
+        updatedAt: new Date(row.updatedAt),
+        client: row.client,
+        host: row.host,
+        customHost: row.customHost,
+        template: row.template,
+        headerScripts: row.headerScripts,
+        bodyScripts: row.bodyScripts,
+        footerScripts: row.footerScripts 
       };
     } catch (error) {
       console.error('Error fetching site by ID:', error);
@@ -74,7 +102,7 @@ export class SitesDbService {
     try {
       const result = await sql`
         INSERT INTO sites (name, dev_url, production_url, notes)
-        VALUES (${siteData.name}, ${siteData.devUrl}, ${siteData.productionUrl}, ${siteData.notes})
+        VALUES (${siteData.name}, ${siteData.devUrl}, ${siteData.productionUrl}, ${siteData.notes}, ${siteData.client}, ${siteData.host}, ${siteData.customHost}, ${siteData.template}, ${siteData.headerScripts}${siteData.bodyScripts}, ${siteData.footerScripts})
         RETURNING 
           id, 
           name, 
@@ -82,7 +110,14 @@ export class SitesDbService {
           production_url as "productionUrl", 
           notes, 
           created_at as "createdAt", 
-          updated_at as "updatedAt"
+          updated_at as "updatedAt",
+          client,
+          host,
+          custom_host as "customHost",
+          template,
+          header_scripts as "headerScripts",
+          body_scripts as "bodyScripts",
+          footer_scripts as "footerScripts"
       `;
       
       const row = result[0];
@@ -93,7 +128,14 @@ export class SitesDbService {
         productionUrl: row.productionUrl,
         notes: row.notes,
         createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt)
+        updatedAt: new Date(row.updatedAt),
+        client: row.client,
+        host: row.host,
+        customHost: row.customHost,
+        template: row.template,
+        headerScripts: row.headerScripts,
+        bodyScripts: row.bodyScripts,
+        footerScripts: row.footerScripts 
       };
     } catch (error) {
       console.error('Error creating site:', error);
@@ -110,7 +152,14 @@ export class SitesDbService {
           name = ${siteData.name},
           dev_url = ${siteData.devUrl},
           production_url = ${siteData.productionUrl},
-          notes = ${siteData.notes}
+          notes = ${siteData.notes},
+          client = ${siteData.client},
+          host = ${siteData.host},
+          custom_host = ${siteData.customHost},
+          template = ${siteData.template},
+          header_scripts = ${siteData.headerScripts},
+          body_scripts = ${siteData.bodyScripts},
+          footer_scripts = ${siteData.footerScripts}
         WHERE id = ${id}
         RETURNING 
           id, 
@@ -119,7 +168,14 @@ export class SitesDbService {
           production_url as "productionUrl", 
           notes, 
           created_at as "createdAt", 
-          updated_at as "updatedAt"
+          updated_at as "updatedAt",
+          client,
+          host,
+          custom_host as "customHost",
+          template,
+          header_scripts as "headerScripts",
+          body_scripts as "bodyScripts",
+          footer_scripts as "footerScripts"
       `;
       
       if (result.length === 0) {
@@ -134,7 +190,14 @@ export class SitesDbService {
         productionUrl: row.productionUrl,
         notes: row.notes,
         createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt)
+        updatedAt: new Date(row.updatedAt),
+        client: row.client,
+        host: row.host,
+        customHost: row.customHost,
+        template: row.template,
+        headerScripts: row.headerScripts,
+        bodyScripts: row.bodyScripts,
+        footerScripts: row.footerScripts 
       };
     } catch (error) {
       console.error('Error updating site:', error);

@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, devUrl, productionUrl, notes } = body;
+    const { name, devUrl, productionUrl, notes, client, host, customHost, template, headerScripts, bodyScripts, footerScripts } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -32,7 +32,14 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       devUrl: devUrl?.trim() || '',
       productionUrl: productionUrl?.trim() || '',
-      notes: notes?.trim() || ''
+      notes: notes?.trim() || '',
+      client: client?.trim() || '',
+      host: host?.trim() || '',
+      customHost: customHost?.trim() || '',
+      template: template?.trim() || '',
+      headerScripts: headerScripts?.trim() || '',
+      bodyScripts: bodyScripts?.trim() || '',
+      footerScripts: footerScripts?.trim() || '',
     };
 
     const newSite = await SitesDbService.createSite(siteData);

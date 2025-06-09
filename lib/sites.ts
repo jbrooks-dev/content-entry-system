@@ -84,6 +84,7 @@ export class SitesService {
   // Update an existing site
   static async updateSite(id: string, siteData: Omit<Site, 'id' | 'createdAt' | 'updatedAt'>): Promise<Site> {
     try {
+      console.log(siteData);
       const response = await fetch(`${this.baseUrl}/${id}`, {
         method: 'PUT',
         headers: {
